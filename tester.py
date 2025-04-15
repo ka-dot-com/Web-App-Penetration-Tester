@@ -2,11 +2,9 @@ import requests
 from bs4 import BeautifulSoup
 
 def test_sql_injection(url, form_id):
-    # Test a form for SQL injection vulnerabilities
     payloads = ["' OR '1'='1", "admin' --", "1; DROP TABLE users"]
     results = []
     
-    # Fetch the form to find input fields
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
     form = soup.find("form", id=form_id)
@@ -16,15 +14,14 @@ def test_sql_injection(url, form_id):
     inputs = form.find_all("input")
     fields = [inp["name"] for inp in inputs if inp.get("name")]
     
-    # Try each payload to see if it bypasses security
     for payload in payloads:
         data = {field: payload for field in fields}
         try:
             response = requests.post(url, data=data, timeout=5)
             if "error" not in response.text.lower():
                 results.append(f"Potential SQL injection found with: {payload}")
-        except requests.RequestException:
-            results.append(f"Error testing payload: {payload}")
+        except requests.RequestException as e:
+            results.append(f"Error testing payload: {payload}, Exception: {e}")
     
     return results if results else ["No SQL injection vulnerabilities detected."]
 
